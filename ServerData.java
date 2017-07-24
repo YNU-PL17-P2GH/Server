@@ -1,9 +1,12 @@
 import java.io.BufferedReader;
 import java.io.File;
-import java.io.FileNotFoundException;
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
 import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
 
 
 public class ServerData {
@@ -11,10 +14,10 @@ public class ServerData {
 		
 	}
 	
-	public boolean makeUser(String usrname,String pass){
+	public boolean makeUser(String usrname,String pass){   
 		try{
-			  File file = new File(".\\user\\"+usrname+".txt");
-			  
+			  File file = new File(".\\user\\"+usrname+".txt");	
+			//ユーザ名とパスワードを管理するファイル
 			  if(!file.exists()){
 				  FileWriter filewriter =new FileWriter(file);
 				  filewriter.write(pass);
@@ -25,10 +28,11 @@ public class ServerData {
 				  filewriter.write(usrname+"\n");
 				  filewriter.close();
 				  
-				  file = new File(".\\savedata\\"+usrname+"data.txt");
-				  filewriter =new FileWriter(file,true);
-				  filewriter.write("0\n");
+				  file = new File(".\\savedata\\"+usrname+"objdata.txt");
+				  filewriter = new FileWriter(file);
+				  filewriter.write("");
 				  filewriter.close();
+				  //セーブデータを保持するファイル
 				  
 			  }else{
 				  System.out.println("file is exists");
@@ -42,7 +46,7 @@ public class ServerData {
 
 	}
 	
-	public boolean queryUser(String usrname,String pass){
+	public boolean queryUser(String usrname,String pass){	//ユーザ名とパスワードを照合する
 		try{
 			File file= new File(".\\user\\"+usrname+".txt");
 			if(file.exists()){
@@ -71,54 +75,45 @@ public class ServerData {
 		
 	}
 	
-	public boolean saveData(String usrname,String data){
-		File file = new File(".\\savedata\\"+usrname+"data.txt");
-		if(file.exists()){
-			try {
-				FileWriter filewriter =new FileWriter(file,true);
-				filewriter.write(data+"\n");
-				filewriter.close();
-			} catch (IOException e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
-			}
-		}else{
+	public boolean saveData(String usrname,Object saveobj){		//セーブデータをオブジェクトデータで保存する
+		FileOutputStream outfile = null;
+		ObjectOutputStream outobj=null;
+		try {
+			outfile = new FileOutputStream(".\\savedata\\"+usrname+"objdata.txt");
+			outobj= new ObjectOutputStream(outfile);
+			outobj.writeObject(saveobj);
+			outfile.close();outobj.close();
+			return true;
+		} catch (IOException e1) {
+			// TODO Auto-generated catch block
+			e1.printStackTrace();
 			return false;
 		}
-		return true;
-	}
-	
-	public String loadData(String usrname){
-		File file = new File(".\\savedata\\"+usrname+"data.txt");
-		BufferedReader br;String laststr = "nodata";
-		if(file.exists()){	
-			try {
-				br = new BufferedReader(new FileReader(file));
-				try {
-					String str =br.readLine();
-					
-					while(str!=null){
-						laststr=str;
-						str=br.readLine();
-					}
-					
-					System.out.println(laststr);
-					br.close();
-				} catch (IOException e) {
-					// TODO Auto-generated catch block
-					e.printStackTrace();
-				}
 			
-			}catch(FileNotFoundException e){
-				
-			}
-		}else{
-			return "nodata";
-		}
-		return laststr;
 	}
 	
-	public boolean checkLength(String usrname,String pass){
+	public Object loadData(String usrname){		//セーブデータのオブジェクトデータを返す
+		
+		try {
+			FileInputStream infile = new FileInputStream(".\\savedata\\"+usrname+"objdata.txt");
+			ObjectInputStream inobj;
+			inobj = new ObjectInputStream(infile);
+			Object obj =inobj.readObject();
+			infile.close();inobj.close();
+			
+			return obj;
+			
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}catch (ClassNotFoundException e){
+			e.printStackTrace();
+		}
+		return null;
+		
+	}
+	
+	public boolean checkLength(String usrname,String pass){	//ユーザ名とパスワードの長さをチェックする
 		int MAXLENGTH=16;int MINLENGTH=2;
 		if(usrname.length()>MAXLENGTH || pass.length()>MAXLENGTH || usrname.length()<MINLENGTH || pass.length()<MINLENGTH){
 			System.out.println("reject");

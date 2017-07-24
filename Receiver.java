@@ -1,8 +1,7 @@
 
-import java.io.BufferedReader;
 import java.io.IOException;
-import java.io.InputStreamReader;
-import java.io.PrintWriter;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
 import java.net.Socket;
 
 public class Receiver extends Thread{
@@ -10,7 +9,8 @@ public class Receiver extends Thread{
 	private ServerData sd;
 	
 	
-	public Receiver(Socket socket, int playerNo){
+	
+	public Receiver(Socket socket){
 		 this.socket = socket;
 		    System.out.println("server接続されました "
 		                       + socket.getRemoteSocketAddress());
@@ -18,71 +18,80 @@ public class Receiver extends Thread{
 	
 	public void run() {
 	    try {
-	    	BufferedReader in = new BufferedReader(new InputStreamReader(socket.getInputStream()));
-	        PrintWriter out = new PrintWriter(socket.getOutputStream(), true);
+	    	//System.out.println("run");	
+	    	SaveData data;
 	        String line;
-	      while (true) { 
-	    	  line= in.readLine();
-	    	  if(line!=null){
-	    	  
-		        System.out.println(socket.getRemoteSocketAddress()
-		                           + " 受信: " + line);
-		        out.println(line);
-		        System.out.println(socket.getRemoteSocketAddress()
-		                           + " 送信: " + line);
-		        
-		        
+	        //System.out.println("run2");
+	        
+	      while (true) { 			//常に要求信号を受けられる
+	    	  	ObjectInputStream ois = new ObjectInputStream(socket.getInputStream());
+		        ObjectOutputStream oos = new ObjectOutputStream(socket.getOutputStream());
+	    	  	Object obj=ois.readObject();
+	    	  	data =(SaveData)(obj);
+	    	  	line =data.getFlag("operation");//operationというキーに要求信号を格納してほしい
 		        sd=new ServerData();
 		        String str1=null,str2=null;
 		        boolean flag=true;
-				switch (line){
-				case "a": //sign up
-					str1=in.readLine();str2=in.readLine();
+		        
+		        
+				switch (line){		//クライアントからの要求信号を受けて動作する
+				case "a": //sign up	
+					str1=data.getFlag("userName");str2=data.getFlag("passWord");
+					//ユーザ名とパスワードをあらかじめキーに入れて送信してほしい
 					if(sd.checkLength(str1, str2)){
 						flag=sd.makeUser(str1, str2);
 					}
 					if(flag){
-						out.println("accept");
+						data.setFlag("signup", "accept");
+						//要求が正常に処理されたかどうかをキーに入れて返答する
+						
 					}else{
-						out.println("reject");
+						data.setFlag("signup", "reject");
 					}
+					oos.writeObject(data);
 					break;
 					
 				case "b": //sign in
-					str1=in.readLine();str2=in.readLine();
-					System.out.println(str1+str2);
+					str1=data.getFlag("userName");str2=data.getFlag("passWord");
 					if(sd.queryUser(str1, str2)){
-						out.println("accept");
+						data.setFlag("signin", "accept");
 					}else{
-						out.println("reject");
+						data.setFlag("signin", "reject");
 					}
+					oos.writeObject(data);
 					break;
 				case "c": //save data
-					str1=in.readLine();str2=in.readLine();
-					if(sd.saveData(str1, str2)){
-						out.println("accept");
+					str1=data.getFlag("userName");
+					if(sd.saveData(str1, obj)){
+						data.setFlag("savedata", "accept");
 					}else{
-						out.println("reject");
+						data.setFlag("savedata", "reject");
 					}
+					oos.writeObject(data);
 					break;
 				case "d": //load data
-					str1=in.readLine();
-					str2=sd.loadData(str1);
-					out.println(str2);
+					str1=data.getFlag("userName");
+					data.setFlag("loaddata", "accept");
+					Object loadobj=sd.loadData(str1);
+					oos.writeObject(loadobj);
 					break;
 				case "e": //disconnect
-					out.println("accept");
+					oos.writeObject(data);
+					ois.close();oos.close();
 					socket.close();
 				
 				default:  ;
 				}
-			}
+			
 	      
 	     }
 	      
 	    } catch (IOException e) {
 	      e.printStackTrace();
-	    } finally {
+	    } catch (ClassNotFoundException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		} finally {
 	      try {
 	        if (socket != null) {
 	          socket.close();

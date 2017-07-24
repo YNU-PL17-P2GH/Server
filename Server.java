@@ -5,15 +5,9 @@ import java.net.Socket;
 
 public class Server{
 	private static int port=9999; // サーバの待ち受けポート
-	//private static PrintWriter [] out; //データ送信用オブジェクト
-	//private Receiver [] receiver; //データ受信用オブジェクト
-	private static int player_number=0;
-
+	
 	public Server(int port){
-		this.port = port; //待ち受けポートを渡す
-		//out = new PrintWriter [1000]; //データ送信用オブジェクトを2クライアント分用意
-		//receiver = new Receiver [1000]; //データ受信用オブジェクトを2クライアント分用意
-		
+		Server.port = port; //待ち受けポートを渡す
 	}
 	
 	public static void main(String[] args){
@@ -21,11 +15,10 @@ public class Server{
 		try{
 			serverSocket = new ServerSocket(port);
 			System.out.println("Server Ready");
-			while(true){
+			while(true){						//常にクライアントとの新規接続を待つ
 				Socket socket = serverSocket.accept();
-				new Receiver(socket,player_number).start();
-				System.out.println("start");
-				player_number++;
+				new Receiver(socket).start();	//socketスレッドを起動
+				System.out.println("thread start");
 			}
 		}catch(IOException e){
 			e.printStackTrace();
