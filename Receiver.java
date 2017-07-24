@@ -21,6 +21,8 @@ public class Receiver extends Thread{
 	    	//System.out.println("run");	
 	    	SaveData data;
 	        String line;
+	        String username=null;
+	        String password=null;
 	        //System.out.println("run2");
 	        
 	      while (true) { 			//常に要求信号を受けられる
@@ -32,11 +34,13 @@ public class Receiver extends Thread{
 		        sd=new ServerData();
 		        String str1=null,str2=null;
 		        boolean flag=true;
+		        System.out.println(username+ "  " +password);
 		        
 		        
 				switch (line){		//クライアントからの要求信号を受けて動作する
 				case "a": //sign up	
 					str1=data.getFlag("userName");str2=data.getFlag("passWord");
+					username=str1;password=str2;
 					//ユーザ名とパスワードをあらかじめキーに入れて送信してほしい
 					if(sd.checkLength(str1, str2)){
 						flag=sd.makeUser(str1, str2);
@@ -53,6 +57,7 @@ public class Receiver extends Thread{
 					
 				case "b": //sign in
 					str1=data.getFlag("userName");str2=data.getFlag("passWord");
+					username=str1;password=str2;
 					if(sd.queryUser(str1, str2)){
 						data.setFlag("signin", "accept");
 					}else{
@@ -62,18 +67,31 @@ public class Receiver extends Thread{
 					break;
 				case "c": //save data
 					str1=data.getFlag("userName");
-					if(sd.saveData(str1, obj)){
-						data.setFlag("savedata", "accept");
-					}else{
-						data.setFlag("savedata", "reject");
+					str2=data.getFlag("passWord");
+					//認証も行う
+					if(str1.equals(username) && str2.equals(password)){
+						if(sd.saveData(str1, obj)){ 
+							data.setFlag("savedata", "accept");
+						}else{
+							data.setFlag("savedata", "reject");
+						}
 					}
 					oos.writeObject(data);
 					break;
 				case "d": //load data
 					str1=data.getFlag("userName");
-					data.setFlag("loaddata", "accept");
-					Object loadobj=sd.loadData(str1);
-					oos.writeObject(loadobj);
+					str2=data.getFlag("passWord");
+					System.out.println("d active");
+					//認証を行う
+					if(str1.equals(username) &&str2.equals(password)){
+						Object loadobj=sd.loadData(str1);
+						SaveData sd=(SaveData)loadobj;
+						sd.setFlag("loaddata", "accept");
+						oos.writeObject(sd);
+					}else{
+						data.setFlag("loaddata", "reject");
+						oos.writeObject(data);
+					}
 					break;
 				case "e": //disconnect
 					oos.writeObject(data);

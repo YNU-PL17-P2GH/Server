@@ -30,7 +30,7 @@ public class ServerData {
 				  
 				  file = new File(".\\savedata\\"+usrname+"objdata.txt");
 				  filewriter = new FileWriter(file);
-				  filewriter.write("");
+				  filewriter.write("0");
 				  filewriter.close();
 				  //セーブデータを保持するファイル
 				  
@@ -52,8 +52,8 @@ public class ServerData {
 			if(file.exists()){
 			BufferedReader br = new BufferedReader(new FileReader(file));
 			String str = br.readLine();
-				System.out.println("  str="+str);
-				System.out.println("  pass="+pass);
+				//System.out.println("  str="+str);
+				//System.out.println("  pass="+pass);
 				br.close();
 			    if(str.equals(pass)){
 			    	return true;
